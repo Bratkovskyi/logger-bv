@@ -3,6 +3,7 @@ package logger
 import (
 	"fmt"
 	"runtime"
+	"sync/atomic"
 	"time"
 )
 
@@ -16,6 +17,10 @@ const (
 )
 
 func (c ConsoleLogger) Log(level LogLevel, msg string) {
+	if c.Spinner != nil && atomic.LoadInt32(&c.Spinner.active) == 1 {
+		c.Spinner.clearLine()
+	}
+
 	var color, prefix string
 
 	switch level {
@@ -49,7 +54,10 @@ func (c ConsoleLogger) Log(level LogLevel, msg string) {
 	fmt.Printf("%s%s %s [%s] %s%s\n", color, prefix, timestamp, location, msg, ColorReset)
 }
 
-type ConsoleLogger struct{}
+type ConsoleLogger struct {
+	Spinner  *Spinner
+	MinLevel LogLevel
+}
 
 func (c ConsoleLogger) Info(msg string)    { c.Log(LevelInfo, msg) }
 func (c ConsoleLogger) Debug(msg string)   { c.Log(LevelDebug, msg) }
